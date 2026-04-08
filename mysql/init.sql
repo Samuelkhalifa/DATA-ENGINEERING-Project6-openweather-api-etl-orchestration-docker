@@ -6,3 +6,4 @@ CREATE TABLE IF NOT EXISTS weather (
     weather_description TEXT,
     date DATE
 );
+

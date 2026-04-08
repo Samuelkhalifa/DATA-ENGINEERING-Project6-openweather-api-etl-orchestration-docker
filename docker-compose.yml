@@ -1,46 +1,47 @@
 services:
   # PostgreSQL Database for storing weather data
-  postgres:
-    image: postgres:13
+  mysql:
+    image: mysql:8.0
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "3306:3306"
     networks:
       - airflow_net
 
   # pgAdmin for visual management of PostgreSQL
-  pgadmin:
-    image: dpage/pgadmin4
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PMA_HOST: mysql
+      PMA_PORT: 3306
     ports:
-      - "5050:80"
+      - "8081:80"
     depends_on:
-      - postgres
+      - mysql
     networks:
       - airflow_net
 
   # Apache Airflow for scheduling and ETL logic
-  airflow:
+  airflow-webserver:
     image: apache/airflow:2.9.1-python3.11
     restart: always
     depends_on:
-      - postgres
+      - mysql
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql/${MYSQL_DB}
       AIRFLOW__WEBSERVER__DEFAULT_USER_USERNAME: ${AIRFLOW_USER}
       AIRFLOW__WEBSERVER__DEFAULT_USER_PASSWORD: ${AIRFLOW_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB: ${MYSQL_DB}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
     volumes:
       - ./dags:/opt/airflow/dags
@@ -48,26 +49,51 @@ services:
       - "8080:8080"
     command: >
       bash -c "
+      airflow db init &&
       airflow db migrate &&
-      airflow users create --username ${AIRFLOW_USER} --password ${AIRFLOW_PASSWORD} --firstname Airflow --lastname Admin --role Admin --email admin@example.com &&
-      airflow webserver & airflow scheduler
+      airflow users create --username ${AIRFLOW_USER} --password ${AIRFLOW_PASSWORD} --firstname admin --lastname admin --role Admin --email admin@example.com &&
+      airflow webserver
       "
+    networks:
+      - airflow_net
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.1-python3.11
+    restart: always
+    depends_on:
+      - mysql
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql/${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB: ${MYSQL_DB}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+    volumes:
+      - ./dags:/opt/airflow/dags
+    command: airflow scheduler
     networks:
       - airflow_net
 
   # Metabase for dashboard and visualization
   metabase:
     image: metabase/metabase
+    environment:
+      MB_DB_FILE: /var/lib/metabase_data/metabase.db
+    volumes:
+      - metabase_data:/var/lib/metabase_data
     ports:
       - "3000:3000"
     depends_on:
-      - postgres
+      - mysql
     networks:
       - airflow_net
 
 # Define named volumes for persistence
 volumes:
-  postgres_data:
+  mysql_data:
+  metabase_data:
 
 # Define shared Docker network
 networks:

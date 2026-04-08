@@ -2,14 +2,14 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
 import requests
-import psycopg2
+import mysql.connector
 import os
 
 
-# Retrieve API key from environment variable (set via Docker Compose)
+
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
-# List of major UK cities with coordinates for accurate weather data
+
 UK_CITIES = [
     {"name": "London", "lat": 51.5074, "lon": -0.1278},
     {"name": "Birmingham", "lat": 52.4862, "lon": -1.8904},
@@ -24,7 +24,7 @@ UK_CITIES = [
 ]
 
 
-# Function to fetch current weather data from OpenWeatherMap
+
 def fetch_weather(lat, lon, city_name):
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API_KEY}&units=metric"
     response = requests.get(url)
@@ -39,26 +39,28 @@ def fetch_weather(lat, lon, city_name):
     return weather
 
 
-# Function to connect to PostgreSQL and store weather data
+
 def store_weather():
+
     import logging
 
-    # Connect to PostgreSQL container (host is service name in Docker Compose)
-    conn = psycopg2.connect(
-        host="postgres",
-        database= os.getenv("POSTGRES_DB"),
-        user= os.getenv("POSTGRES_USER"),
-        password= os.getenv("POSTGRES_PASSWORD")
+    conn = mysql.connector.connect(
+        host="mysql", 
+        database= os.getenv("MYSQL_DB"),
+        user= os.getenv("MYSQL_USER"),
+        password= os.getenv("MYSQL_PASSWORD")
     )
+    
     cur = conn.cursor()
+   
 
     for city in UK_CITIES:
-        try:
-            # Fetch and log weather data
+        #try:
+            
             weather = fetch_weather(city["lat"], city["lon"], city["name"])
             logging.info(f"Fetched weather for {city['name']}: {weather}")
 
-            # Insert weather data into the weather table
+            
             insert_query = """
             INSERT INTO weather (city, temperature, humidity, weather_description, date)
             VALUES (%s, %s, %s, %s, %s)
@@ -71,21 +73,22 @@ def store_weather():
                 weather["date"]
             ))
 
-            logging.info(f"Inserted weather for {city['name']} successfully.")
-        except Exception as e:
-            logging.error(f"Error with {city['name']}: {e}")
+        #    logging.info(f"Inserted weather for {city['name']} successfully.")
+        #except Exception as e:
+        #    logging.error(f"Error with {city['name']}: {e}")
+
+
 
     conn.commit()
     cur.close()
     conn.close()
 
 
-# Define Airflow DAG
+
 default_args = {
     "start_date": datetime(2024, 1, 1),
 }
 
-# DAG definition: runs daily and triggers weather fetch/store task
 with DAG(
     dag_id="weather_etl",
     schedule_interval="@daily",
