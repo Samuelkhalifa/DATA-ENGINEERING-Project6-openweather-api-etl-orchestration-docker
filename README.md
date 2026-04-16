@@ -33,6 +33,12 @@ Project in the context of Data Engineering self-learning
 
 ## &#127919; Project steps
 
+<br>
+
+  * Retrieve data from openweather-API.
+  * Transform data with `Python`.
+  * Set up docker with a docker-compose.yml file and configurate all necessary services (`MySQL`and a MySQL UI `phpmyadmin`, `airflow` and dashboard tool `metabase`).
+  * Activate airflow dag to make data travel from API source to metabase, through a SQL database.
 
 <br>
 
