@@ -78,5 +78,7 @@ Enable `docker` by running the `docker-compose` file, which will create all nece
 <br>
 
 Go to `localhost:8081` to manage your SQL database through `phpmyadmin`.
+
 Go to `localhost:8080` to trigger your `Airflow` dag and start orchestrationg ETL process.
+
 Go to `localhost:3000` to start using dashording tool `Metabase`
