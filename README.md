@@ -1,4 +1,7 @@
-Project in the context of Data Engineering self-learning
+Project in the context of Data Engineering self-learning and inspired by chiranjeevi-sagi with : <br>
+github repo : https://github.com/chiranjeevi-sagi/weather-data-pipeline/tree/main and <br>
+YouTube video : https://www.youtube.com/watch?v=w9Ke-BMettc
+
 
 <br>
 
