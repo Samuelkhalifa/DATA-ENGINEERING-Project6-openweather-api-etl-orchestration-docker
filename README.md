@@ -25,8 +25,8 @@ Project in the context of Data Engineering self-learning
 <br>
 
 <p align="center";>
-  <img width="721" height="221" alt="Capture d’écran 2026-04-16 à 15 42 01" 
-  src="https://github.com/user-attachments/assets/3ab96e3d-4bf3-4c8a-8057-062242010f98" />
+  <img width="978" height="269" alt="Capture d’écran 2026-04-16 à 17 22 27" 
+  src="https://github.com/user-attachments/assets/f5626bff-ef9f-409e-b7cb-294fc918b15e" />
 </p>
 
 <br>
